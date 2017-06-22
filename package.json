@@ -1,0 +1,33 @@
+{
+  "name": "allex_npminstallserverruntimelib",
+  "version": "1.0.0",
+  "description": "AllexJS server run-time lib for npm-installing needed modules",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allex-serverruntime-libs/npminstall.git"
+  },
+  "dependencies": {
+    "ps-node": "0.x",
+    "allexlib": "2.x",
+    "allex_configrootserverruntimelib": "1.x",
+    "allex_ispipetakenserverruntimelib": "1.x"
+  },
+  "keywords": [
+    "ecosystem:AllexJS",
+    "server",
+    "runtime",
+    "lib",
+    "npm",
+    "install"
+  ],
+  "author": "Andrija Petrovic <andrija.hers@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allex-serverruntime-libs/npminstall/issues"
+  },
+  "homepage": "https://github.com/allex-serverruntime-libs/npminstall#readme"
+}
