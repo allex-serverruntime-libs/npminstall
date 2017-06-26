@@ -1,6 +1,6 @@
 {
   "name": "allex_npminstallserverruntimelib",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AllexJS server run-time lib for npm-installing needed modules",
   "main": "index.js",
   "scripts": {
@@ -13,6 +13,7 @@
   "dependencies": {
     "ps-node": "0.x",
     "allexlib": "2.x",
+    "allex_bunyanloggerserverruntimelib": "1.x",
     "allex_configrootserverruntimelib": "1.x",
     "allex_ispipetakenserverruntimelib": "1.x"
   },
