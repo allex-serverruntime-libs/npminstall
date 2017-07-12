@@ -40,7 +40,7 @@ function createInstall (lib) {
   }
 
   function oncheck(cb, cwd, modulename, eraseprobe, isallex) {
-    var installstring = process.pid+zeroString+modulename+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
+    var installstring = process.pid+zeroString+(isallex && isallex.modulename ? isallex.modulename : modulename)+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
       installerpipename = Path.join(cwd, pipename),
       installerprobename = installerpipename+'__probe';
 

@@ -8,12 +8,14 @@ var net = require('net'),
   JobBase = qlib.JobBase,
   pipename = './.allexnpminstaller',
   isPipeTaken = require('allex_ispipetakenserverruntimelib')(lib),
+  Node = require('allex_nodehelpersserverruntimelib')(lib),
   server = null,
   connectionCounter = 0,
   child_process = require('child_process'),
   killTimer = lib.runNext(die.bind(null,0),15*1000),
   BunyanLogger = require('allex_bunyanloggerserverruntimelib'),
   ps = require('ps-node'),
+  pstree = require('ps-tree'),
   modules = new lib.Map(),
   submodules = new lib.Map(),
   requests = new JobCollection();
@@ -27,6 +29,7 @@ function InstallRequest(module, path){
   Logger.info('new', this.constructor.name, module, path);
   modules.add(path, this);
   this.running = false;
+  this.pid = null;
   this.module = module;
   this.path = path;
   this.requesters = [];
@@ -60,6 +63,7 @@ InstallRequest.prototype.doInstall = function () {
   var cp = child_process.exec('npm install '+this.path, {
     cwd: Path.join(process.cwd())
   });
+  this.pid = cp.pid;
   cp.on('exit', this.onInstalled.bind(this));
 };
 function notifier(res, req){
@@ -93,6 +97,12 @@ InstallRequest.prototype.onNoNpmProcesses = function (cb) {
   return this.forkTester(cb);
 };
 InstallRequest.prototype.forkTester = function (cb) {
+  if (!Node.Fs.existsSync(Path.join('node_modules', this.module))){
+    cb(1);
+    return;
+  }
+  pstree(this.pid, this.onPsTree.bind(this, cb));
+  return;
   var cp = child_process.fork('./test.js', [this.module], {}),
     cppid = cp.pid+'',
     d = q.defer(),
@@ -100,6 +110,18 @@ InstallRequest.prototype.forkTester = function (cb) {
   submodules.add(cppid, this.path);
   cp.on('exit', this.onTestDone.bind(this, d, cppid, cb));
   return ret;
+};
+InstallRequest.prototype.onPsTree = function (cb, err, children) {
+  if (err) {
+    cb(1);
+    return;
+  }
+  if (children && children.length) {
+    cb(1);
+    return;
+  }
+  cb(0);
+  return;
 };
 InstallRequest.prototype.onTestDone = function (defer, testpid, cb) {
   submodules.remove(testpid);
@@ -113,7 +135,6 @@ InstallRequest.prototype.checkInstallation = function (cb) {
   ps.lookup({command: 'npm'}, this.onPS.bind(this, cb));
 };
 InstallRequest.prototype.onCheck = function (exitcode) {
-  Logger.info(this.module, 'onCheck', exitcode);
   if (exitcode == 0) {
     this.finalize();
   } else {
@@ -149,15 +170,16 @@ function connectionHandler(c) {
 }
 
 function run(sockettoprogram){
-  var allexpath = require.resolve('allex'); //Path.resolve(process.cwd(), Path.join(__dirname, '..', '..', 'allex'));
-  child_process.exec("if [ ! -d 'node_modules' ];then mkdir node_modules; fi && echo 'try{var m = require(process.argv[2]); if (\"function\" === typeof m && m.length===1){m(require(\""+allexpath+"\"));process.exit(0);}}catch(e){console.error(e); process.exit(1)}' > test.js", onMkDir.bind(null, sockettoprogram));
+  Node.Fs.ensureDirSync('node_modules');
+  onMkDir(sockettoprogram);
 }
 
 function die(result) {
   if (result) {
     process.exit(result);
   }else {
-    child_process.exec('rm -f .allexnpminstaller test.js', process.exit.bind(process, 0));
+    Node.Fs.removeSync('.allexnpminstaller');
+    process.exit(0);
   }
 }
 
