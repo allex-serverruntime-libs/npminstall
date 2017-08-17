@@ -6,7 +6,8 @@ var net = require('net'),
   qlib = lib.qlib,
   JobCollection = qlib.JobCollection,
   JobBase = qlib.JobBase,
-  pipename = './.allexnpminstaller',
+  makePipeName = require('./pipename'),
+  pipename;
   isPipeTaken = require('allex_ispipetakenserverruntimelib')(lib),
   Node = require('allex_nodehelpersserverruntimelib')(lib),
   server = null,
@@ -22,6 +23,7 @@ var net = require('net'),
 
 var Logger = new BunyanLogger('.npminstaller.log', null, 1, 'npm-install');
 
+pipename = makePipeName(process.cwd());
 isPipeTaken(pipename).then(run, die.bind(null,1));
 
 function InstallRequest(module, path){
@@ -178,7 +180,7 @@ function die(result) {
   if (result) {
     process.exit(result);
   }else {
-    Node.Fs.removeSync('.allexnpminstaller');
+    Node.Fs.removeSync(pipename);
     process.exit(0);
   }
 }

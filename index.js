@@ -1,18 +1,26 @@
+var Path = require('path'),
+    net = require('net'),
+    fs = require('fs'),
+    child_process = require('child_process'),
+    recognizer,
+    configroot = require('allex_configrootserverruntimelib'),
+    makePipeName = require('./pipename'),
+    isPipeTaken,
+    probename = '.allexnpminstaller__probe',
+    _isWindows = require('./iswindows');
+
 function createInstall (lib) {
-  var Path = require('path'),
-      net = require('net'),
-      fs = require('fs'),
-      child_process = require('child_process'),
-      recognizer = lib.moduleRecognition,
-      configroot = require('allex_configrootserverruntimelib'),
-      isPipeTaken = require('allex_ispipetakenserverruntimelib')(lib),
-      pipename = '.allexnpminstaller';
+  recognizer = lib.moduleRecognition;
+  isPipeTaken = require('allex_ispipetakenserverruntimelib')(lib);
 
   function install(cb,moduleloaderror_or_modulename, cwd){
     if (!cwd) {
       cwd = configroot();
     }else{
       cwd = Path.resolve(configroot(), cwd); ///should be dicussed: relative paths are bit problematic: relative to what?
+    }
+    if (!Path.isAbsolute(cwd)) {
+      cwd = Path.resolve(process.cwd(), cwd);
     }
     var modulename;
     if (moduleloaderror_or_modulename instanceof Error || moduleloaderror_or_modulename.hasOwnProperty('code')) {
@@ -41,8 +49,8 @@ function createInstall (lib) {
 
   function oncheck(cb, cwd, modulename, eraseprobe, isallex) {
     var installstring = process.pid+zeroString+(isallex && isallex.modulename ? isallex.modulename : modulename)+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
-      installerpipename = Path.join(cwd, pipename),
-      installerprobename = installerpipename+'__probe';
+      installerpipename = makePipeName(cwd),
+      installerprobename = Path.join(cwd, probename);
 
     if (fs.existsSync(installerprobename)) {
       if (eraseprobe) {
@@ -64,7 +72,7 @@ function createInstall (lib) {
   }
 
   function run(installstring, cb, cwd, modulename, installerpipename, sockettoprogram) {
-    var installerprobename = installerpipename+'__probe';
+    var installerprobename = Path.join(cwd, probename), options;
     //console.log('probing', installerprobename);
     if (fs.existsSync(installerprobename)) {
       //console.log('giving up because', installerprobename);
@@ -74,11 +82,16 @@ function createInstall (lib) {
 
     if (!sockettoprogram) {
       fs.writeFileSync(installerprobename, Date.now()+'');
-      child_process.spawn('node',[Path.join(__dirname, 'install.js')],{
+      options = {
         cwd: cwd,
         detached: true,
         stdio: 'ignore'
-      });
+      };
+      if (_isWindows) {
+        child_process.spawn('CMD',['/S', '/C', 'node', Path.join(__dirname, 'install.js')],options);
+      } else {
+        child_process.spawn('node',[Path.join(__dirname, 'install.js')],options);
+      }
       setTimeout(check.bind(null, cb, cwd, modulename, true), 250);
       return;
     }
