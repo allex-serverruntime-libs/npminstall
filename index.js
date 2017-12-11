@@ -47,6 +47,12 @@ function createInstall (lib) {
     recognizer(modulename).then(oncheck.bind(null, cb, cwd, modulename, eraseprobe));
   }
 
+  function unlinkAnyhow (path) {
+    try {
+      fs.unlinkSync(path);
+    } catch(ignore) {}
+  }
+
   function oncheck(cb, cwd, modulename, eraseprobe, isallex) {
     var installstring = process.pid+zeroString+(isallex && isallex.modulename ? isallex.modulename : modulename)+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
       installerpipename = makePipeName(cwd),
@@ -55,7 +61,7 @@ function createInstall (lib) {
     if (fs.existsSync(installerprobename)) {
       if (eraseprobe) {
         //console.log('removing', installerprobename);
-        fs.unlinkSync(installerprobename);
+        unlinkAnyhow(installerprobename);
         //console.log('removed', installerprobename);
       } else {
         var timestamp = parseInt(fs.readFileSync(installerprobename));
@@ -64,7 +70,7 @@ function createInstall (lib) {
           setTimeout(check.bind(null, cb, cwd, modulename), 100);
           return;
         } else {
-          fs.unlinkSync(installerprobename);
+          unlinkAnyhow(installerprobename);
         }
       }
     }
