@@ -121,7 +121,7 @@ function createInstall (lib) {
   }
 
   function onSocketError (modulename, cb, error) {
-    console.error('npm could not install the missing module', modulename, 'because', e);
+    console.error('npm could not install the missing module', modulename, 'because', error);
     cb(false);
   }
 
