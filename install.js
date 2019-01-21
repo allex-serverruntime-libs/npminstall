@@ -62,7 +62,7 @@ InstallRequest.prototype.onInitialCheck = function (exitcode) {
 };
 InstallRequest.prototype.doInstall = function () {
   Logger.info('going to temp install', this.path, 'currently in', process.cwd());
-  var cp = child_process.exec('npm install '+this.path, {
+  var cp = child_process.exec('npm install --no-package-lock --no-save '+this.path, {
     cwd: Path.join(process.cwd())
   });
   this.pid = cp.pid;
