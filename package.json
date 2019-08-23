@@ -1,6 +1,6 @@
 {
   "name": "allex_npminstallserverruntimelib",
-  "version": "1.0.6",
+  "version": "2.0.0",
   "description": "AllexJS server run-time lib for npm-installing needed modules",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "allex_temppipedirserverruntimelib": "1.x",
     "allex_ispipetakenserverruntimelib": "1.x",
     "allex_nodehelpersserverruntimelib": "1.x",
-    "allexlib": "2.x",
+    "allexlib": "3.x",
     "ps-node": "0.x",
     "ps-tree": "1.x"
   },
