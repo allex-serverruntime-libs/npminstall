@@ -1,6 +1,6 @@
 {
   "name": "allex_npminstallserverruntimelib",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "AllexJS server run-time lib for npm-installing needed modules",
   "main": "index.js",
   "scripts": {

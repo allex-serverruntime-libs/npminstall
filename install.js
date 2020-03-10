@@ -61,17 +61,33 @@ InstallRequest.prototype.onInitialCheck = function (exitcode) {
   }
 };
 InstallRequest.prototype.doInstall = function () {
-  Logger.info('going to temp install', this.path, 'currently in', process.cwd());
-  var cp = child_process.exec('npm install --no-package-lock --no-save '+this.path, {
-    cwd: Path.join(process.cwd())
-  });
+  Logger.info('going to install', this.path, 'currently in', process.cwd());
+  var execopts, npminstallinguserid, cp;
+  execopts = {
+    cwd: Path.join(process.cwd()),
+    stdio: 'inherit'
+  };
+  if (process.env.NPMINSTALLINGUSERID) {
+    npminstallinguserid = parseInt(process.env.NPMINSTALLINGUSERID);
+    Logger.info('npminstallinguserid', npminstallinguserid);
+    if (lib.isNumber(npminstallinguserid) && !isNaN(npminstallinguserid)) {
+      execopts.uid = npminstallinguserid;
+    }
+    if (process.env.NPMINSTALLINGUSERHOME) {
+      execopts.env = lib.extend(process.env, {
+        HOME: process.env.NPMINSTALLINGUSERHOME
+      });
+    }
+  }
+  Logger.info('npm install opts', execopts);
+  cp = child_process.exec('npm install --no-package-lock --no-save '+this.path, execopts);
   this.pid = cp.pid;
   cp.on('exit', this.onInstalled.bind(this));
 };
 function notifier(res, req){
   req.resolve(res);
 }
-InstallRequest.prototype.onInstalled = function (error, resultarry) {
+InstallRequest.prototype.onInstalled = function (error, stdout, stderr) {
   if (!error) {
     Logger.info('installed', this.path, error, Path.join(process.cwd(), this.path));
     this.checkInstallation(this.onCheck.bind(this));
