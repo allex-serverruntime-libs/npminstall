@@ -79,7 +79,6 @@ InstallRequest.prototype.doInstall = function () {
       });
     }
   }
-  Logger.info('npm install opts', execopts);
   cp = child_process.exec('npm install --no-package-lock --no-save '+this.path, execopts);
   this.pid = cp.pid;
   cp.on('exit', this.onInstalled.bind(this));
@@ -116,6 +115,14 @@ InstallRequest.prototype.onNoNpmProcesses = function (cb) {
 };
 InstallRequest.prototype.forkTester = function (cb) {
   if (!Node.Fs.existsSync(Path.join('node_modules', this.module))){
+    cb(1);
+    return;
+  }
+  try {
+    require(this.module);
+    Logger.info(this.module, 'require succeeded');
+  } catch (e) {
+    Logger.error(this.module, 'require failed', e);
     cb(1);
     return;
   }
