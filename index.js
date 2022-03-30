@@ -14,7 +14,9 @@ function createInstall (lib) {
   isPipeTaken = require('allex_ispipetakenserverruntimelib')(lib);
 
   function install(cb,moduleloaderror_or_modulename, cwd){
+    var isglobal = false;
     if (!cwd) {
+      isglobal = true;
       cwd = configroot();
     }else{
       cwd = Path.resolve(configroot(), cwd); ///should be dicussed: relative paths are bit problematic: relative to what?
@@ -38,13 +40,13 @@ function createInstall (lib) {
 
     if ('string' !== typeof(modulename)) throw new Error('Invalid modulename error: '+modulename);
 
-    check(cb, cwd, modulename);
+    check(cb, cwd, modulename, isglobal);
   }
 
   var zeroString = String.fromCharCode(0);
 
-  function check(cb, cwd, modulename, eraseprobe) {
-    recognizer(modulename).then(oncheck.bind(null, cb, cwd, modulename, eraseprobe));
+  function check(cb, cwd, modulename, isglobal, eraseprobe) {
+    recognizer(modulename).then(oncheck.bind(null, cb, cwd, modulename, isglobal, eraseprobe));
   }
 
   function unlinkAnyhow (path) {
@@ -53,8 +55,8 @@ function createInstall (lib) {
     } catch(ignore) {}
   }
 
-  function oncheck(cb, cwd, modulename, eraseprobe, isallex) {
-    var installstring = process.pid+zeroString+(isallex && isallex.modulename ? isallex.modulename : modulename)+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
+  function oncheck(cb, cwd, modulename, isglobal, eraseprobe, isallex) {
+    var installstring = process.pid+zeroString+(!!isglobal)+zeroString+(isallex && isallex.modulename ? isallex.modulename : modulename)+zeroString+(isallex && isallex.npmstring ? isallex.npmstring : modulename),
       installerpipename = makePipeName(cwd),
       installerprobename = Path.join(cwd, probename);
 
@@ -67,22 +69,22 @@ function createInstall (lib) {
         var timestamp = parseInt(fs.readFileSync(installerprobename));
         if(!isNaN(timestamp) && Date.now()-timestamp<100*1000){
           //console.log('giving up because', installerprobename);
-          setTimeout(check.bind(null, cb, cwd, modulename), 100);
+          setTimeout(check.bind(null, cb, cwd, modulename, isglobal), 100);
           return;
         } else {
           unlinkAnyhow(installerprobename);
         }
       }
     }
-    isPipeTaken(installerpipename).then(run.bind(null, installstring, cb, cwd, modulename, installerpipename));
+    isPipeTaken(installerpipename).then(run.bind(null, installstring, cb, cwd, modulename, isglobal, installerpipename));
   }
 
-  function run(installstring, cb, cwd, modulename, installerpipename, sockettoprogram) {
+  function run(installstring, cb, cwd, modulename, isglobal, installerpipename, sockettoprogram) {
     var installerprobename = Path.join(cwd, probename), options;
     //console.log('probing', installerprobename);
     if (fs.existsSync(installerprobename)) {
       //console.log('giving up because', installerprobename);
-      setTimeout(check.bind(null, cb, cwd, modulename), 100);
+      setTimeout(check.bind(null, cb, cwd, modulename, isglobal), 100);
       return;
     }
 
@@ -98,7 +100,7 @@ function createInstall (lib) {
       } else {
         child_process.spawn('node',[Path.join(__dirname, 'install.js')],options);
       }
-      setTimeout(check.bind(null, cb, cwd, modulename, true), 250);
+      setTimeout(check.bind(null, cb, cwd, modulename, isglobal, true), 250);
       return;
     }
     sockettoprogram.on('error', onSocketError.bind(null, modulename, cb));

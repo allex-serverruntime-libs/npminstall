@@ -26,10 +26,11 @@ var Logger = new BunyanLogger('.npminstaller.log', null, 1, 'npm-install');
 pipename = makePipeName(process.cwd());
 isPipeTaken(pipename).then(run, die.bind(null,1));
 
-function InstallRequest(module, path){
+function InstallRequest(isglobal, module, path){
   JobBase.call(this);
   Logger.info('new', this.constructor.name, module, path);
   modules.add(path, this);
+  this.isglobal = isglobal;
   this.running = false;
   this.pid = null;
   this.module = module;
@@ -44,6 +45,7 @@ InstallRequest.prototype.destroy = function () {
   this.requesters = null;
   this.path = null;
   this.module = null;
+  this.isglobal = null;
   JobBase.prototype.destroy.call(this);
 };
 InstallRequest.prototype.go = function () {
@@ -79,7 +81,7 @@ InstallRequest.prototype.doInstall = function () {
       });
     }
   }
-  cp = child_process.exec('npm install --no-package-lock --no-save '+this.path, execopts);
+  cp = child_process.exec('npm install '+(this.isglobal ? '-g ' : '')+this.path, execopts);
   this.pid = cp.pid;
   cp.on('exit', this.onInstalled.bind(this));
 };
@@ -119,7 +121,7 @@ InstallRequest.prototype.forkTester = function (cb) {
     return;
   }
   try {
-    require(this.module);
+    require.resolve(this.module, {paths: [this.path]});
     Logger.info(this.module, 'require succeeded');
   } catch (e) {
     Logger.error(this.module, 'require failed', e);
@@ -171,8 +173,8 @@ InstallRequest.prototype.finalize = function () {
   this.resolve(true);
 };
 
-function SuperInstallRequest (module, path) {
-  InstallRequest.call(this, module, path);
+function SuperInstallRequest (isglobal, module, path) {
+  InstallRequest.call(this, isglobal, module, path);
   this.subrequests = [];
 }
 lib.inherit(SuperInstallRequest, InstallRequest);
@@ -274,18 +276,18 @@ ConnectionHandler.prototype.onData = function (data) {
 var zeroString = String.fromCharCode(0);
 ConnectionHandler.prototype.run = function () {
   var p = this.message.split(zeroString); //"\t");
-  if (p.length===2) {
-    this.invoke(p[0], p[1], p[1]);
+  if (p.length===3) {
+    this.invoke(p[0], p[1], p[2], p[2]);
   } else {
-    this.invoke(p[0], p[1], p[2]);
+    this.invoke(p[0], p[1], p[2], p[3]);
   }
 };
-ConnectionHandler.prototype.invoke = function (invokerpid, modulename, path) {
+ConnectionHandler.prototype.invoke = function (invokerpid, isglobal, modulename, path) {
   Logger.info('invoke', modulename, path, 'from', invokerpid);
   var r = modules.get(path), spath, sr;
   if (!r) {
     spath = submodules.get(invokerpid);
-    r = new (spath ? InstallRequest : SuperInstallRequest)(modulename, path);
+    r = new (spath ? InstallRequest : SuperInstallRequest)(isglobal, modulename, path);
     r.requesters.push(this);
     if (spath) {
       sr = modules.get(spath);
