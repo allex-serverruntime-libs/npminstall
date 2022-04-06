@@ -80,7 +80,7 @@ function createInstall (lib) {
   }
 
   function run(installstring, cb, cwd, modulename, isglobal, installerpipename, sockettoprogram) {
-    var installerprobename = Path.join(cwd, probename), options;
+    var installerprobename = Path.join(cwd, probename), options, npminstallinguserid;
     //console.log('probing', installerprobename);
     if (fs.existsSync(installerprobename)) {
       //console.log('giving up because', installerprobename);
@@ -95,6 +95,18 @@ function createInstall (lib) {
         detached: true,
         stdio: 'ignore'
       };
+      if (process.env.NPMINSTALLINGUSERID) {
+        npminstallinguserid = parseInt(process.env.NPMINSTALLINGUSERID);
+        if (lib.isNumber(npminstallinguserid) && !isNaN(npminstallinguserid)) {
+          options.uid = npminstallinguserid;
+          options.gid = npminstallinguserid;
+        }
+        if (process.env.NPMINSTALLINGUSERHOME) {
+          options.env = lib.extend(process.env, {
+            HOME: process.env.NPMINSTALLINGUSERHOME
+          });
+        }
+      }
       if (_isWindows) {
         child_process.spawn('CMD',['/S', '/C', 'node', Path.join(__dirname, 'install.js')],options);
       } else {

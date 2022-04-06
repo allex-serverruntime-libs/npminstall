@@ -64,23 +64,11 @@ InstallRequest.prototype.onInitialCheck = function (exitcode) {
 };
 InstallRequest.prototype.doInstall = function () {
   Logger.info('going to install', this.path, 'currently in', process.cwd());
-  var execopts, npminstallinguserid, cp;
+  var execopts, cp;
   execopts = {
     cwd: Path.join(process.cwd()),
     stdio: 'inherit'
   };
-  if (process.env.NPMINSTALLINGUSERID) {
-    npminstallinguserid = parseInt(process.env.NPMINSTALLINGUSERID);
-    Logger.info('npminstallinguserid', npminstallinguserid);
-    if (lib.isNumber(npminstallinguserid) && !isNaN(npminstallinguserid)) {
-      execopts.uid = npminstallinguserid;
-    }
-    if (process.env.NPMINSTALLINGUSERHOME) {
-      execopts.env = lib.extend(process.env, {
-        HOME: process.env.NPMINSTALLINGUSERHOME
-      });
-    }
-  }
   cp = child_process.exec('npm install '+(this.isglobal ? '-g ' : '')+this.path, execopts);
   this.pid = cp.pid;
   cp.on('exit', this.onInstalled.bind(this));
